@@ -33,8 +33,8 @@ restart_rect = pygame.Rect(210, 900, 300, 150)
 
 score = 0
 num_of_money = 15
-MONEY_FALL_SPEED = 360.0
-BOWL_SPEED = 600.0
+MONEY_FALL_SPEED = 850.0
+BOWL_SPEED = 1100.0
 money_x = [random.randint(50, 550) for _ in range(num_of_money)]
 money_y = [random.randint(0, 300) for _ in range(num_of_money)]
 
@@ -100,7 +100,6 @@ async def main():
     running = True
 
     while running:
-        # Delta-time movement keeps speed consistent and much faster on the web.
         dt = clock.tick(60) / 1000.0
         dt = min(dt, 0.05)
 
