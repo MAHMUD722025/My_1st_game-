@@ -4,13 +4,12 @@ import pygame
 
 pygame.init()
 
-# Screen
 WIDTH, HEIGHT = 720, 1500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hasina Eating Money")
 clock = pygame.time.Clock()
 
-# Assets must stay inside the GitHub repository.
+
 def asset(name):
     return name
 
@@ -34,10 +33,10 @@ restart_rect = pygame.Rect(210, 900, 300, 150)
 
 score = 0
 num_of_money = 15
-gravity = 0.05
+MONEY_FALL_SPEED = 360.0
+BOWL_SPEED = 600.0
 money_x = [random.randint(50, 550) for _ in range(num_of_money)]
 money_y = [random.randint(0, 300) for _ in range(num_of_money)]
-money_velocity = [0 for _ in range(num_of_money)]
 
 
 def draw_text(text, x, y, size=40, color=(0, 0, 0)):
@@ -51,7 +50,6 @@ def reset_game():
     for i in range(num_of_money):
         money_x[i] = random.randint(50, 550)
         money_y[i] = random.randint(0, 300)
-        money_velocity[i] = 0
 
 
 async def show_start_screen():
@@ -59,7 +57,6 @@ async def show_start_screen():
         screen.blit(start_background, (0, 0))
         screen.blit(start_button, (150, 900))
         screen.blit(quit_button, (140, 1000))
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
@@ -68,7 +65,6 @@ async def show_start_screen():
                     return False
                 if start_rect.collidepoint(event.pos):
                     return True
-
         pygame.display.update()
         clock.tick(60)
         await asyncio.sleep(0)
@@ -80,14 +76,12 @@ async def game_over_screen():
         draw_text("Game Over", 180, 600, size=100, color=(255, 0, 0))
         draw_text(f"Final Score: {score}", 200, 750, size=60, color=(255, 255, 255))
         screen.blit(restart_button, (210, 900))
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
             if event.type == pygame.MOUSEBUTTONDOWN and restart_rect.collidepoint(event.pos):
                 reset_game()
                 return True
-
         pygame.display.update()
         clock.tick(60)
         await asyncio.sleep(0)
@@ -95,44 +89,53 @@ async def game_over_screen():
 
 async def main():
     global score
-
     if not await show_start_screen():
         pygame.quit()
         return
 
-    bowl_x = 600
+    bowl_x = 600.0
     bowl_y = 1130
-    bowl_speed = 0
+    moving_left = False
+    moving_right = False
     running = True
 
     while running:
+        # Delta-time movement keeps speed consistent and much faster on the web.
+        dt = clock.tick(60) / 1000.0
+        dt = min(dt, 0.05)
+
         screen.blit(background, (0, 0))
-        bowl_rect = screen.blit(bowl, (bowl_x, bowl_y))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if left_rect.collidepoint(event.pos):
-                    bowl_speed = -10
+                    moving_left = True
                 elif right_rect.collidepoint(event.pos):
-                    bowl_speed = 10
+                    moving_right = True
             elif event.type == pygame.MOUSEBUTTONUP:
-                bowl_speed = 0
+                if left_rect.collidepoint(event.pos):
+                    moving_left = False
+                if right_rect.collidepoint(event.pos):
+                    moving_right = False
 
-        bowl_x += bowl_speed
-        bowl_x = max(0, min(600, bowl_x))
+        if moving_left:
+            bowl_x -= BOWL_SPEED * dt
+        if moving_right:
+            bowl_x += BOWL_SPEED * dt
+        bowl_x = max(0, min(520, bowl_x))
+
+        bowl_rect = screen.blit(bowl, (round(bowl_x), bowl_y))
 
         missed = False
         for i in range(num_of_money):
-            money_velocity[i] += gravity
-            money_y[i] += money_velocity[i]
-            money_rect = screen.blit(money, (money_x[i], money_y[i]))
+            money_y[i] += MONEY_FALL_SPEED * dt
+            money_rect = screen.blit(money, (money_x[i], round(money_y[i])))
 
             if bowl_rect.colliderect(money_rect):
                 money_x[i] = random.randint(50, 550)
                 money_y[i] = random.randint(0, 300)
-                money_velocity[i] = 0
                 score += 1
 
             if money_y[i] > 1300:
@@ -145,9 +148,7 @@ async def main():
         screen.blit(hasina_button, (10, 50))
         draw_text(f"Score: {score}", 30, 20, size=50)
         draw_text("Sheikh hasina don't run away.", 70, 70, size=60)
-
         pygame.display.update()
-        clock.tick(60)
         await asyncio.sleep(0)
 
         if missed:
