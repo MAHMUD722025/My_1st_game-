@@ -30,6 +30,9 @@ jobs:
       - name: Install Pygbag
         run: python -m pip install --upgrade pip pygbag
 
+      - name: Remove unsupported audio files for web build
+        run: find . -type f -iname '*.mp3' -delete
+
       - name: Build game for WebAssembly
         run: python -m pygbag --build --ume_block=0 main.py
 
