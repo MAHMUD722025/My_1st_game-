@@ -5,7 +5,8 @@ import pygame
 pygame.init()
 
 try:
-    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+    pygame.mixer.pre_init(44100, -16, 2, 1024)
+    pygame.mixer.init()
 except pygame.error:
     pass
 
@@ -14,21 +15,17 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hasina Eating Money")
 clock = pygame.time.Clock()
 
-
-def asset(name):
-    return name
-
-background = pygame.transform.scale(pygame.image.load(asset("Back3.png")), (WIDTH, HEIGHT))
-start_background = pygame.transform.scale(pygame.image.load(asset("Back2.png")), (WIDTH, HEIGHT))
-money = pygame.transform.scale(pygame.image.load(asset("Money.png")), (150, 100))
-bowl = pygame.transform.scale(pygame.image.load(asset("Hasina3.png")), (200, 300))
-left_button = pygame.transform.scale(pygame.image.load(asset("Left.png")), (200, 200))
-right_button = pygame.transform.scale(pygame.image.load(asset("Right.png")), (200, 200))
-score_button = pygame.transform.scale(pygame.image.load(asset("Score_button.png")), (300, 50))
-hasina_button = pygame.transform.scale(pygame.image.load(asset("Hasina palayna.png")), (700, 100))
-start_button = pygame.transform.scale(pygame.image.load(asset("Start.png")), (400, 200))
-quit_button = pygame.transform.scale(pygame.image.load(asset("Exit.png")), (400, 300))
-restart_button = pygame.transform.scale(pygame.image.load(asset("Restart.png")), (300, 150))
+background = pygame.transform.scale(pygame.image.load("Back3.png"), (WIDTH, HEIGHT))
+start_background = pygame.transform.scale(pygame.image.load("Back2.png"), (WIDTH, HEIGHT))
+money = pygame.transform.scale(pygame.image.load("Money.png"), (150, 100))
+bowl = pygame.transform.scale(pygame.image.load("Hasina3.png"), (200, 300))
+left_button = pygame.transform.scale(pygame.image.load("Left.png"), (200, 200))
+right_button = pygame.transform.scale(pygame.image.load("Right.png"), (200, 200))
+score_button = pygame.transform.scale(pygame.image.load("Score_button.png"), (300, 50))
+hasina_button = pygame.transform.scale(pygame.image.load("Hasina palayna.png"), (700, 100))
+start_button = pygame.transform.scale(pygame.image.load("Start.png"), (400, 200))
+quit_button = pygame.transform.scale(pygame.image.load("Exit.png"), (400, 300))
+restart_button = pygame.transform.scale(pygame.image.load("Restart.png"), (300, 150))
 
 left_rect = pygame.Rect(50, 1100, 200, 200)
 right_rect = pygame.Rect(450, 1100, 200, 200)
@@ -94,19 +91,19 @@ async def game_over_screen():
 
 async def main():
     global score
+
     if not await show_start_screen():
         pygame.quit()
         return
 
-    # The sound is only for catching money; there is no background music.
+    # Load the catch sound AFTER the Start button is pressed.
+    # It plays only when money is caught. No background music.
     money_sound = None
     try:
         money_sound = pygame.mixer.Sound("Unnoyon.ogg")
-        money_sound.set_volume(0.65)
+        money_sound.set_volume(0.8)
     except pygame.error:
         pass
-
-    sound_cooldown = 0.0
 
     bowl_x = 600.0
     bowl_y = 1130
@@ -117,8 +114,6 @@ async def main():
     while running:
         dt = clock.tick(60) / 1000.0
         dt = min(dt, 0.05)
-        sound_cooldown = max(0.0, sound_cooldown - dt)
-
         screen.blit(background, (0, 0))
 
         for event in pygame.event.get():
@@ -142,8 +137,8 @@ async def main():
         bowl_x = max(0, min(520, bowl_x))
 
         bowl_rect = screen.blit(bowl, (round(bowl_x), bowl_y))
-
         missed = False
+
         for i in range(num_of_money):
             money_y[i] += MONEY_FALL_SPEED * dt
             money_rect = screen.blit(money, (money_x[i], round(money_y[i])))
@@ -153,11 +148,10 @@ async def main():
                 money_y[i] = random.randint(0, 300)
                 score += 1
 
-                # Avoid overlapping copies of the 3-second sound.
-                if money_sound is not None and sound_cooldown <= 0.0:
+                if money_sound is not None:
+                    # One clean sound at a time; never stack multiple copies.
                     money_sound.stop()
                     money_sound.play()
-                    sound_cooldown = 0.25
 
             if money_y[i] > 1300:
                 missed = True
