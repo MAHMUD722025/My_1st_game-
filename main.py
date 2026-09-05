@@ -4,6 +4,13 @@ import pygame
 
 pygame.init()
 
+# Initialize audio; the sound is loaded after the Start button is pressed
+# so it works better with browser audio restrictions.
+try:
+    pygame.mixer.init()
+except pygame.error:
+    pass
+
 WIDTH, HEIGHT = 720, 1500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hasina Eating Money")
@@ -93,6 +100,14 @@ async def main():
         pygame.quit()
         return
 
+    # Catch sound: plays ONLY when the player catches money.
+    money_sound = None
+    try:
+        money_sound = pygame.mixer.Sound("Unnoyon.ogg")
+        money_sound.set_volume(0.7)
+    except pygame.error:
+        pass
+
     bowl_x = 600.0
     bowl_y = 1130
     moving_left = False
@@ -136,6 +151,8 @@ async def main():
                 money_x[i] = random.randint(50, 550)
                 money_y[i] = random.randint(0, 300)
                 score += 1
+                if money_sound is not None:
+                    money_sound.play()
 
             if money_y[i] > 1300:
                 missed = True
