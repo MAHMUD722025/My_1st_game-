@@ -4,12 +4,6 @@ import pygame
 
 pygame.init()
 
-try:
-    pygame.mixer.pre_init(44100, -16, 2, 1024)
-    pygame.mixer.init()
-except pygame.error:
-    pass
-
 WIDTH, HEIGHT = 720, 1500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hasina Eating Money")
@@ -96,14 +90,16 @@ async def main():
         pygame.quit()
         return
 
-    # Load the catch sound AFTER the Start button is pressed.
-    # It plays only when money is caught. No background music.
+    # IMPORTANT for browsers: initialize the audio mixer only AFTER
+    # the user has pressed Start, so the browser audio context is unlocked.
     money_sound = None
     try:
+        if pygame.mixer.get_init() is None:
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)
         money_sound = pygame.mixer.Sound("Unnoyon.ogg")
         money_sound.set_volume(0.8)
     except pygame.error:
-        pass
+        money_sound = None
 
     bowl_x = 600.0
     bowl_y = 1130
@@ -148,8 +144,9 @@ async def main():
                 money_y[i] = random.randint(0, 300)
                 score += 1
 
+                # Play Unnoyon.ogg ONLY when money is caught.
+                # Stop the previous copy so the sound never overlaps itself.
                 if money_sound is not None:
-                    # One clean sound at a time; never stack multiple copies.
                     money_sound.stop()
                     money_sound.play()
 
