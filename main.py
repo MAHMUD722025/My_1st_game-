@@ -4,10 +4,8 @@ import pygame
 
 pygame.init()
 
-# Initialize audio; the sound is loaded after the Start button is pressed
-# so it works better with browser audio restrictions.
 try:
-    pygame.mixer.init()
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
 except pygame.error:
     pass
 
@@ -100,13 +98,15 @@ async def main():
         pygame.quit()
         return
 
-    # Catch sound: plays ONLY when the player catches money.
+    # The sound is only for catching money; there is no background music.
     money_sound = None
     try:
         money_sound = pygame.mixer.Sound("Unnoyon.ogg")
-        money_sound.set_volume(0.7)
+        money_sound.set_volume(0.65)
     except pygame.error:
         pass
+
+    sound_cooldown = 0.0
 
     bowl_x = 600.0
     bowl_y = 1130
@@ -117,6 +117,7 @@ async def main():
     while running:
         dt = clock.tick(60) / 1000.0
         dt = min(dt, 0.05)
+        sound_cooldown = max(0.0, sound_cooldown - dt)
 
         screen.blit(background, (0, 0))
 
@@ -151,8 +152,12 @@ async def main():
                 money_x[i] = random.randint(50, 550)
                 money_y[i] = random.randint(0, 300)
                 score += 1
-                if money_sound is not None:
+
+                # Avoid overlapping copies of the 3-second sound.
+                if money_sound is not None and sound_cooldown <= 0.0:
+                    money_sound.stop()
                     money_sound.play()
+                    sound_cooldown = 0.25
 
             if money_y[i] > 1300:
                 missed = True
