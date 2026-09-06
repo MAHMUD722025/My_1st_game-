@@ -62,7 +62,6 @@ async def show_start_screen():
                 if start_rect.collidepoint(event.pos):
                     return True
         pygame.display.update()
-        clock.tick(60)
         await asyncio.sleep(0)
 
 
@@ -79,7 +78,6 @@ async def game_over_screen():
                 reset_game()
                 return True
         pygame.display.update()
-        clock.tick(60)
         await asyncio.sleep(0)
 
 
@@ -90,8 +88,7 @@ async def main():
         pygame.quit()
         return
 
-    # IMPORTANT for browsers: initialize the audio mixer only AFTER
-    # the user has pressed Start, so the browser audio context is unlocked.
+    # Keep the existing browser-compatible catch sound setup unchanged.
     money_sound = None
     try:
         if pygame.mixer.get_init() is None:
@@ -145,7 +142,6 @@ async def main():
                 score += 1
 
                 # Play Unnoyon.ogg ONLY when money is caught.
-                # Stop the previous copy so the sound never overlaps itself.
                 if money_sound is not None:
                     money_sound.stop()
                     money_sound.play()
